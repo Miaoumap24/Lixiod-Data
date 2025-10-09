@@ -2,9 +2,11 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Mon WYSIWYG Trop Bien</title>
-    <style>
-        /* Styles de base et du corps */
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon WYSIWYG Trop Bien (Timéo)</title>
+    
+   <style>
+    /* Styles de base et du corps */
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background-color: #f7f9fc; /* Arrière-plan très doux */
@@ -48,6 +50,7 @@
         color: #1d3557;
         font-weight: bold;
         transition: all 0.2s ease-in-out;
+        white-space: nowrap; /* Empêche de couper le texte */
     }
 
     .tool-button:hover {
@@ -66,6 +69,32 @@
     .export-button:hover {
         background-color: #c72c38;
         border-color: #c72c38;
+    }
+
+    /* Styles pour les sélecteurs (taille/police) et le champ couleur */
+    .tool-select, .tool-label {
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #457b9d;
+        background-color: white;
+        color: #1d3557;
+        cursor: pointer;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+    
+    .tool-label {
+        display: flex;
+        align-items: center;
+    }
+
+    .tool-color {
+        width: 35px;
+        height: 35px;
+        padding: 2px;
+        border: 1px solid #457b9d;
+        border-radius: 6px;
+        cursor: pointer;
     }
 
 
@@ -113,10 +142,13 @@
     .drag-over {
         border-top: 3px solid #1d3557 !important; 
     }
-    </style>
+</style>
 </head>
-
 <body>
+
+    <div id="static-toolbar" class="toolbar">
+        <button class="tool-button" id="add-text-btn">Ajouter un bloc de texte ✍️</button>
+        </div>
 
     <div id="dynamic-toolbar" class="toolbar hidden">
         <button class="tool-button" id="back-btn">Retour ⬅️</button>
@@ -144,7 +176,6 @@
         <label for="color-input" class="tool-label">Couleur 🎨</label>
         <input type="color" class="tool-color" data-command="foreColor" id="color-input" value="#000000">
 
-
         <button class="tool-button export-button" id="export-btn">Exporter 📦</button>
     </div>
 
@@ -152,7 +183,7 @@
         </div>
 
     <script>
-         // Références aux éléments du DOM
+    // Références aux éléments du DOM
     const editor = document.getElementById('editor');
     const staticToolbar = document.getElementById('static-toolbar');
     const dynamicToolbar = document.getElementById('dynamic-toolbar');
@@ -160,8 +191,8 @@
     const backBtn = document.getElementById('back-btn');
     const exportBtn = document.getElementById('export-btn');
 
-    let activeBlock = null; // Variable pour suivre le bloc actuellement en édition
-    let dragElement = null; // Variable pour l'élément qu'on est en train de glisser
+    let activeBlock = null; // Bloc actuellement en édition
+    let dragElement = null; // Élément en cours de glissement
 
     // ----------------------------------------------------------------------
     // 1. GESTION DE L'AFFICHAGE DES TOOLBARS ET DES BLOCS
@@ -222,39 +253,60 @@
     backBtn.addEventListener('click', exitEditMode);
 
     // ----------------------------------------------------------------------
-    // 3. ÉVÉNEMENTS DYNAMIQUES (Gras, Italique, etc. via execCommand)
+    // 3. ÉVÉNEMENTS DYNAMIQUES (Commandes de Boutons : Gras, Italique, Lien)
     // ----------------------------------------------------------------------
 
     dynamicToolbar.addEventListener('click', (event) => {
         const target = event.target;
-        // On vérifie que c'est un bouton d'outil et qu'on n'est pas sur "Retour" ou "Exporter"
-        if (target.classList.contains('tool-button') && target.id !== 'back-btn' && target.id !== 'export-btn') {
-            const command = target.dataset.command;
-            
-            if (command) {
-                // Gestion spéciale pour createLink (demande une URL)
-                if (command === 'createLink') {
-                    const url = prompt("Entre l'URL du lien (ex: https://www.google.com) :");
-                    if (url) {
-                         document.execCommand('createLink', false, url);
-                    }
-                } else {
-                    document.execCommand(command, false, null);
+        const command = target.dataset.command;
+        
+        // Gère les commandes des boutons (Gras, Italique, Lien)
+        if (target.classList.contains('tool-button') && command) {
+            if (command === 'createLink') {
+                const url = prompt("Entre l'URL du lien (ex: https://www.google.com) :");
+                if (url) {
+                     document.execCommand('createLink', false, url);
                 }
-                
-                activeBlock.focus(); // Garde le focus pour continuer à taper
+            } else {
+                // Gras, Italique, Souligné
+                document.execCommand(command, false, null);
             }
+            activeBlock.focus(); 
         }
     });
 
     // ----------------------------------------------------------------------
-    // 4. GESTION DU GLISSER-DÉPOSER (DRAG AND DROP)
+    // 4. ÉVÉNEMENTS DYNAMIQUES (Commandes de Sélecteurs : Police, Taille, Couleur)
+    // ----------------------------------------------------------------------
+
+    dynamicToolbar.addEventListener('change', (event) => {
+        const target = event.target;
+        const command = target.dataset.command;
+        const value = target.value;
+
+        if (command && value) {
+            // Applique la commande avec la valeur sélectionnée
+            document.execCommand(command, false, value);
+            
+            // Réinitialise les sélecteurs après l'action (sauf la couleur)
+            if (target.tagName === 'SELECT') {
+                target.value = ''; 
+            }
+
+            if (activeBlock) {
+                 activeBlock.focus();
+            }
+        }
+    });
+
+
+    // ----------------------------------------------------------------------
+    // 5. GESTION DU GLISSER-DÉPOSER (DRAG AND DROP)
     // ----------------------------------------------------------------------
 
     editor.addEventListener('dragstart', (event) => {
         if (event.target.classList.contains('text-block')) {
             exitEditMode(); 
-            
             dragElement = event.target;
             dragElement.classList.add('dragging');
             event.dataTransfer.effectAllowed = 'move';
@@ -311,11 +363,11 @@
     });
 
     // ----------------------------------------------------------------------
-    // 5. GESTION DU BOUTON EXPORTER
+    // 6. GESTION DU BOUTON EXPORTER
     // ----------------------------------------------------------------------
 
     exportBtn.addEventListener('click', () => {
-        exitEditMode(); // S'assurer qu'on n'est plus en édition
+        exitEditMode(); 
         
         // On récupère uniquement le HTML des blocs déplaçables pour l'export
         const blocksHTML = Array.from(editor.children)
@@ -346,7 +398,6 @@
 
         alert("Fichier HTML exporté avec succès ! Tu gères ! 🎉");
     });
-    </script>
+</script>
 </body>
-    
 </html>
