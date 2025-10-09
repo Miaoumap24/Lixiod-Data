@@ -49,7 +49,23 @@
     </div>
 
     <script>
-        // Le JS viendra ici
+        // On sélectionne la barre d'outils
+const toolbar = document.getElementById('toolbar');
+
+// On ajoute un écouteur d'événement sur la barre d'outils
+toolbar.addEventListener('click', (event) => {
+    // On s'assure qu'on a cliqué sur un bouton d'outil
+    if (event.target.classList.contains('tool-button')) {
+        // On récupère la commande à exécuter (ex: "bold")
+        const command = event.target.dataset.command;
+
+        // C'est la ligne magique du WYSIWYG !
+        document.execCommand(command, false, null);
+
+        // Rend le focus à l'éditeur pour une meilleure expérience
+        document.getElementById('editor').focus();
+    }
+});
     </script>
 </body>
 </html>
