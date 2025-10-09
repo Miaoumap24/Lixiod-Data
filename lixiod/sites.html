@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon WYSIWYG Trop Bien</title>
+    <style>
+        /* Un peu de CSS pour que ça ressemble à quelque chose de doux et coloré */
+        body { font-family: sans-serif; background-color: #f7f9fc; padding: 20px; }
+        #toolbar {
+            background-color: #ffe0e6; /* Rose doux */
+            border-radius: 8px 8px 0 0;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        #editor {
+            min-height: 400px;
+            border: 1px solid #dcdcdc;
+            padding: 20px;
+            font-size: 16px;
+            background-color: white;
+            border-radius: 0 0 8px 8px;
+            outline: none; /* Enlève la bordure par défaut lors du focus */
+        }
+        .tool-button {
+            cursor: pointer;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #a8dadc; /* Bleu-vert doux */
+            color: #1d3557;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .tool-button:hover {
+            background-color: #457b9d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        </div>
+
+    <div id="editor" contenteditable="true">
+        Commence à écrire ici !
+    </div>
+
+    <script>
+        // Le JS viendra ici
+    </script>
+</body>
+</html>
