@@ -4,20 +4,24 @@
     <meta charset="UTF-8">
     <title>Linux - Lixiod Data</title>
     <style>
+        /* CSS Statique et Simple */
         body {
-            background-color: #F8F8F8;
-            color: #333333;
+            background-color: #FFFFFF; /* Fond blanc pur */
+            color: #111111; /* Texte noir */
             font-family: monospace;
-            margin: 40px;
+            margin: 50px;
+            font-size: 18px; 
         }
 
         h1 {
-            color: #333333;
-            border-bottom: 1px solid #BBBBBB;
-            padding-bottom: 5px;
-            margin-bottom: 20px;
+            color: #000000;
+            border-bottom: 1px solid #BBBBBB; /* Ligne de séparation très simple */
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 28px;
         }
 
+        /* Liste des liens */
         .file-list {
             list-style: none;
             padding: 0;
@@ -25,20 +29,22 @@
         }
 
         .file-list li {
-            margin: 5px 0;
+            margin: 8px 0;
         }
 
+        /* Style du lien (balise <a>) - AUCUNE animation ni effet */
         .file-list a {
-            text-decoration: none;
-            color: #007ACC; 
+            text-decoration: none; /* Pas de soulignement par défaut */
+            color: #000000; /* Le lien est NOIR, statique */
             padding: 2px 5px;
             display: inline-block; 
-            transition: color 0.2s;
+            font-size: 20px;
         }
 
+        /* Enlève tout effet de survol pour une simplicité maximale */
         .file-list a:hover {
-            color: #FF69B4;
-            text-decoration: underline;
+            text-decoration: none; /* S'assure qu'il n'y ait pas de soulignement au survol */
+            color: #000000; /* Reste NOIR au survol */
         }
     </style>
 </head>
