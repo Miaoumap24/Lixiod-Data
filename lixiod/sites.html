@@ -209,6 +209,9 @@
         activeBlock.classList.add('active');
         activeBlock.contentEditable = 'true';
         activeBlock.focus();
+        
+        // ⭐ CORRECTION DRAG-AND-DROP : DÉSACTIVER le glisser-déposer en mode édition ⭐
+        activeBlock.setAttribute('draggable', 'false');
 
         // Change les barres d'outils
         staticToolbar.classList.add('hidden');
@@ -219,6 +222,10 @@
         if (activeBlock) {
             activeBlock.contentEditable = 'false';
             activeBlock.classList.remove('active');
+            
+            // ⭐ CORRECTION DRAG-AND-DROP : RÉACTIVER le glisser-déposer en sortie de mode édition ⭐
+            activeBlock.setAttribute('draggable', 'true');
+            
             activeBlock = null;
         }
         // Change les barres d'outils
@@ -235,7 +242,9 @@
         const newBlock = document.createElement('p');
         newBlock.classList.add('text-block');
         newBlock.textContent = 'Nouveau texte génial !'; 
-        newBlock.setAttribute('draggable', 'true'); // Rendre le nouveau bloc déplaçable
+        
+        // On le crée DRAGGABLE=TRUE par défaut (pour qu'il puisse être glissé immédiatement)
+        newBlock.setAttribute('draggable', 'true'); 
         
         editor.appendChild(newBlock);
         
@@ -303,6 +312,8 @@
     // ----------------------------------------------------------------------
     // 5. GESTION DU GLISSER-DÉPOSER (DRAG AND DROP)
     // ----------------------------------------------------------------------
+    // REMARQUE : La logique ici n'a pas besoin de changer, car elle vérifie si
+    // l'élément est 'draggable' (ce que nous gérons dans enter/exitEditMode)
 
     editor.addEventListener('dragstart', (event) => {
         if (event.target.classList.contains('text-block')) {
