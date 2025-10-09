@@ -41,7 +41,13 @@
 <body>
 
     <div id="toolbar">
-        <button class="tool-button" data-command="bold">Gras</button>
+       <button class="tool-button" data-command="bold">Gras 🅱️</button>
+        <button class="tool-button" data-command="italic">Italique 🇮</button>
+        <button class="tool-button" data-command="underline">Souligné 🇺</button>
+
+        <button class="tool-button" data-command="createLink">Lien 🔗</button>
+
+        <button class="tool-button export-button" id="export-btn">Exporter 📦</button>
         </div>
 
     <div id="editor" contenteditable="true">
@@ -49,22 +55,69 @@
     </div>
 
     <script>
-        // On sélectionne la barre d'outils
+        // Références aux éléments
 const toolbar = document.getElementById('toolbar');
+const editor = document.getElementById('editor');
+const exportBtn = document.getElementById('export-btn');
 
-// On ajoute un écouteur d'événement sur la barre d'outils
+// --- 1. Gestion des boutons de formatage (Gras, Italique, Souligné) ---
 toolbar.addEventListener('click', (event) => {
-    // On s'assure qu'on a cliqué sur un bouton d'outil
-    if (event.target.classList.contains('tool-button')) {
-        // On récupère la commande à exécuter (ex: "bold")
-        const command = event.target.dataset.command;
+    const target = event.target;
 
-        // C'est la ligne magique du WYSIWYG !
-        document.execCommand(command, false, null);
-
-        // Rend le focus à l'éditeur pour une meilleure expérience
-        document.getElementById('editor').focus();
+    if (target.classList.contains('tool-button')) {
+        const command = target.dataset.command;
+        
+        // Gère les commandes standard (Gras, Italique, Souligné)
+        if (command && command !== 'createLink') {
+            document.execCommand(command, false, null);
+            editor.focus();
+        }
     }
+});
+
+// --- 2. Fonction Spécifique : Ajouter un Lien (createLink) ---
+toolbar.addEventListener('click', (event) => {
+    if (event.target.dataset.command === 'createLink') {
+        const url = prompt("Entre l'URL du lien (ex: https://www.google.com) :");
+        if (url) {
+            // Applique la commande 'createLink' avec l'URL comme paramètre
+            document.execCommand('createLink', false, url);
+        }
+        editor.focus();
+    }
+});
+
+
+// --- 3. Fonction Spécifique : Exporter le HTML (Ton Objectif !) ---
+exportBtn.addEventListener('click', () => {
+    // 1. Récupère le HTML à l'intérieur de l'éditeur
+    const contentHTML = editor.innerHTML;
+
+    // 2. Encapsule le contenu dans une structure HTML propre (pour l'export)
+    const exportContent = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Exportée de Mon Éditeur Trop Bien</title>
+    </head>
+<body>
+    ${contentHTML}
+</body>
+</html>`;
+
+    // 3. Crée un BLOB (Binary Large Object) et un lien de téléchargement
+    const blob = new Blob([exportContent], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'page_editor_timeo.html'; // Le nom du fichier de sortie !
+    
+    // 4. Déclenche le téléchargement
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    alert("Fichier HTML exporté avec succès ! Tu es trop fort ! 🎉");
 });
     </script>
 </body>
