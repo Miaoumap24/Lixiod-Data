@@ -4,121 +4,240 @@
     <meta charset="UTF-8">
     <title>Mon WYSIWYG Trop Bien</title>
     <style>
-        /* Un peu de CSS pour que ça ressemble à quelque chose de doux et coloré */
-        body { font-family: sans-serif; background-color: #f7f9fc; padding: 20px; }
-        #toolbar {
-            background-color: #ffe0e6; /* Rose doux */
-            border-radius: 8px 8px 0 0;
-            padding: 10px;
-            display: flex;
-            gap: 10px;
-        }
-        #editor {
-            min-height: 400px;
-            border: 1px solid #dcdcdc;
-            padding: 20px;
-            font-size: 16px;
-            background-color: white;
-            border-radius: 0 0 8px 8px;
-            outline: none; /* Enlève la bordure par défaut lors du focus */
-        }
-        .tool-button {
-            cursor: pointer;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            background-color: #a8dadc; /* Bleu-vert doux */
-            color: #1d3557;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-        .tool-button:hover {
-            background-color: #457b9d;
-            color: white;
-        }
+        /* Styles de base et du corps */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f7f9fc; /* Arrière-plan très doux */
+        padding: 20px;
+        margin: 0;
+    }
+
+    /* Styles pour les toolbars (barres d'outils) */
+    .toolbar {
+        padding: 10px;
+        display: flex;
+        flex-wrap: wrap; /* Pour s'assurer que ça passe bien sur mobile */
+        gap: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Toolbar statique (Ajouter un bloc) - Rose doux */
+    #static-toolbar {
+        background-color: #ffe0e6;
+    }
+
+    /* Toolbar dynamique (Édition) - Jaune doux */
+    #dynamic-toolbar {
+        background-color: #fce172;
+    }
+
+    /* Classe pour masquer les toolbars */
+    .hidden {
+        display: none !important;
+    }
+
+    /* Styles des boutons */
+    .tool-button {
+        cursor: pointer;
+        padding: 8px 12px;
+        border: 2px solid transparent;
+        border-radius: 6px;
+        background-color: #a8dadc; /* Bleu-vert doux */
+        color: #1d3557;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .tool-button:hover {
+        background-color: #457b9d;
+        color: white;
+        border-color: #457b9d;
+        transform: translateY(-1px);
+    }
+
+    /* Bouton d'exportation pour le faire ressortir */
+    .export-button {
+        background-color: #e63946; /* Rouge */
+        color: white;
+        margin-left: auto; /* Le pousse vers la droite */
+    }
+    .export-button:hover {
+        background-color: #c72c38;
+        border-color: #c72c38;
+    }
+
+
+    /* Le conteneur principal de l'éditeur */
+    #editor {
+        min-height: 500px;
+        border: 2px dashed #a8dadc; /* Bordure douce pour indiquer la zone de travail */
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        transition: border-color 0.3s;
+    }
+
+    /* Styles des blocs de texte */
+    .text-block {
+        margin: 15px 0;
+        padding: 10px;
+        font-size: 16px;
+        line-height: 1.6;
+        border: 1px solid transparent;
+        transition: border 0.2s, background-color 0.2s;
+        cursor: pointer;
+        outline: none; /* Très important pour l'édition */
+    }
+
+    /* Effet au survol des blocs */
+    .text-block:hover {
+        border: 1px dashed #457b9d;
+        background-color: #f0f8ff; /* Très légère couleur pour le survol */
+    }
+
+    /* Style du bloc actif (en mode édition) */
+    .text-block.active {
+        border: 2px solid #457b9d; /* Bordure bleue plus forte en édition */
+        background-color: #ffffff;
+    }
     </style>
 </head>
+
 <body>
 
-    <div id="toolbar">
-       <button class="tool-button" data-command="bold">Gras 🅱️</button>
-        <button class="tool-button" data-command="italic">Italique 🇮</button>
-        <button class="tool-button" data-command="underline">Souligné 🇺</button>
-
-        <button class="tool-button" data-command="createLink">Lien 🔗</button>
-
-        <button class="tool-button export-button" id="export-btn">Exporter 📦</button>
+    <div id="static-toolbar" class="toolbar">
+        <button class="tool-button" id="add-text-btn">Ajouter un bloc de texte ✍️</button>
         </div>
 
-    <div id="editor" contenteditable="true">
-        Commence à écrire ici !
+    <div id="dynamic-toolbar" class="toolbar hidden">
+        <button class="tool-button" id="back-btn">Retour ⬅️</button>
+        <button class="tool-button" data-command="bold">Gras 🅱️</button>
+        <button class="tool-button" data-command="italic">Italique 🇮</button>
+        <button class="tool-button export-button" id="export-btn">Exporter 📦</button>
     </div>
 
+    <div id="editor">
+        </div>
+
     <script>
-        // Références aux éléments
-const toolbar = document.getElementById('toolbar');
+        // Références aux éléments du DOM
 const editor = document.getElementById('editor');
+const staticToolbar = document.getElementById('static-toolbar');
+const dynamicToolbar = document.getElementById('dynamic-toolbar');
+const addTextBtn = document.getElementById('add-text-btn');
+const backBtn = document.getElementById('back-btn');
 const exportBtn = document.getElementById('export-btn');
 
-// --- 1. Gestion des boutons de formatage (Gras, Italique, Souligné) ---
-toolbar.addEventListener('click', (event) => {
-    const target = event.target;
+let activeBlock = null; // Variable pour suivre le bloc actuellement en édition
 
-    if (target.classList.contains('tool-button')) {
-        const command = target.dataset.command;
-        
-        // Gère les commandes standard (Gras, Italique, Souligné)
-        if (command && command !== 'createLink') {
-            document.execCommand(command, false, null);
-            editor.focus();
-        }
+// ----------------------------------------------------------------------
+// 1. GESTION DE L'AFFICHAGE DES TOOLBARS ET DES BLOCS
+// ----------------------------------------------------------------------
+
+function enterEditMode(block) {
+    if (activeBlock) {
+        activeBlock.classList.remove('active');
+        activeBlock.contentEditable = 'false';
+    }
+
+    // Active le nouveau bloc
+    activeBlock = block;
+    activeBlock.classList.add('active');
+    activeBlock.contentEditable = 'true';
+    activeBlock.focus();
+
+    // Change les barres d'outils
+    staticToolbar.classList.add('hidden');
+    dynamicToolbar.classList.remove('hidden');
+}
+
+function exitEditMode() {
+    if (activeBlock) {
+        activeBlock.contentEditable = 'false';
+        activeBlock.classList.remove('active');
+        activeBlock = null;
+    }
+    // Change les barres d'outils
+    dynamicToolbar.classList.add('hidden');
+    staticToolbar.classList.remove('hidden');
+}
+
+// ----------------------------------------------------------------------
+// 2. ÉVÉNEMENTS STATIQUES (Ajouter / Exporter)
+// ----------------------------------------------------------------------
+
+// Ajout d'un nouveau bloc de texte
+addTextBtn.addEventListener('click', () => {
+    // Crée un nouveau paragraphe
+    const newBlock = document.createElement('p');
+    newBlock.classList.add('text-block');
+    newBlock.textContent = 'Nouveau texte génial !'; // Texte par défaut
+    
+    editor.appendChild(newBlock);
+    
+    // Entre directement en mode édition pour le nouveau bloc
+    enterEditMode(newBlock);
+});
+
+// Écouter les clics dans l'éditeur pour passer en mode édition
+editor.addEventListener('click', (event) => {
+    if (event.target.classList.contains('text-block')) {
+        enterEditMode(event.target);
     }
 });
 
-// --- 2. Fonction Spécifique : Ajouter un Lien (createLink) ---
-toolbar.addEventListener('click', (event) => {
-    if (event.target.dataset.command === 'createLink') {
-        const url = prompt("Entre l'URL du lien (ex: https://www.google.com) :");
-        if (url) {
-            // Applique la commande 'createLink' avec l'URL comme paramètre
-            document.execCommand('createLink', false, url);
-        }
-        editor.focus();
-    }
-});
+// Bouton "Retour" pour sortir du mode édition
+backBtn.addEventListener('click', exitEditMode);
 
 
-// --- 3. Fonction Spécifique : Exporter le HTML (Ton Objectif !) ---
+// Gestion du bouton EXPORTER (le même que précédemment, adapté)
 exportBtn.addEventListener('click', () => {
-    // 1. Récupère le HTML à l'intérieur de l'éditeur
+    exitEditMode(); // S'assurer qu'on n'est plus en édition
+    
     const contentHTML = editor.innerHTML;
-
-    // 2. Encapsule le contenu dans une structure HTML propre (pour l'export)
     const exportContent = `<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Exportée de Mon Éditeur Trop Bien</title>
-    </head>
+</head>
 <body>
     ${contentHTML}
 </body>
 </html>`;
 
-    // 3. Crée un BLOB (Binary Large Object) et un lien de téléchargement
     const blob = new Blob([exportContent], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'page_editor_timeo.html'; // Le nom du fichier de sortie !
+    a.download = 'page_editor_timeo.html';
     
-    // 4. Déclenche le téléchargement
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 
-    alert("Fichier HTML exporté avec succès ! Tu es trop fort ! 🎉");
+    alert("Fichier HTML exporté avec succès ! 🎉");
+});
+
+// ----------------------------------------------------------------------
+// 3. ÉVÉNEMENTS DYNAMIQUES (Gras, Italique, etc.)
+// ----------------------------------------------------------------------
+
+dynamicToolbar.addEventListener('click', (event) => {
+    const target = event.target;
+    // On vérifie que c'est un bouton d'outil et qu'on n'est pas sur "Exporter"
+    if (target.classList.contains('tool-button') && target.id !== 'back-btn' && target.id !== 'export-btn') {
+        const command = target.dataset.command;
+        
+        if (command) {
+            document.execCommand(command, false, null);
+            activeBlock.focus(); // Garde le focus pour continuer à taper
+        }
+    }
 });
     </script>
 </body>
+    
 </html>
