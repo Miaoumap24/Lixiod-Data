@@ -118,14 +118,33 @@
 
 <body>
 
-    <div id="static-toolbar" class="toolbar">
-        <button class="tool-button" id="add-text-btn">Ajouter un bloc de texte ✍️</button>
-        </div>
-
     <div id="dynamic-toolbar" class="toolbar hidden">
         <button class="tool-button" id="back-btn">Retour ⬅️</button>
+
         <button class="tool-button" data-command="bold">Gras 🅱️</button>
         <button class="tool-button" data-command="italic">Italique 🇮</button>
+        <button class="tool-button" data-command="underline">Souligné 🇺</button>
+        <button class="tool-button" data-command="createLink">Lien 🔗</button>
+
+        <select class="tool-select" data-command="fontName" id="font-select">
+            <option value="">Police</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Comic Sans MS">Comic Sans MS (Pour le fun !)</option>
+        </select>
+
+        <select class="tool-select" data-command="fontSize" id="size-select">
+            <option value="">Taille</option>
+            <option value="3">Petit</option>
+            <option value="5">Moyen</option>
+            <option value="7">Grand</option>
+        </select>
+        
+        <label for="color-input" class="tool-label">Couleur 🎨</label>
+        <input type="color" class="tool-color" data-command="foreColor" id="color-input" value="#000000">
+
+
         <button class="tool-button export-button" id="export-btn">Exporter 📦</button>
     </div>
 
