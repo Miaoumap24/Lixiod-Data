@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon WYSIWYG Trop Bien (Timéo)</title>
     
-   <style>
+    <style>
     /* Styles de base et du corps */
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -116,7 +116,7 @@
         line-height: 1.6;
         border: 1px solid transparent;
         transition: border 0.2s, background-color 0.2s;
-        cursor: move; /* Indique qu'il est déplaçable */
+        cursor: move;
         outline: none;
     }
 
@@ -142,13 +142,48 @@
     .drag-over {
         border-top: 3px solid #1d3557 !important; 
     }
+
+    /* ⭐ NOUVEAU CSS POUR LES IMAGES ⭐ */
+    .image-block {
+        margin: 15px 0;
+        padding: 10px;
+        border: 1px solid transparent;
+        transition: border 0.2s;
+        cursor: move;
+        text-align: center; /* Centre l'image dans le bloc */
+        position: relative; /* Nécessaire pour le redimensionnement */
+        resize: both; /* Permet le redimensionnement */
+        overflow: hidden; /* Cache ce qui dépasse si l'image est redimensionnée */
+        min-width: 50px; /* Taille minimale */
+        min-height: 50px;
+        border-radius: 15px; /* Coins arrondis pour le bloc image */
+    }
+
+    .image-block.active {
+        border: 2px solid #457b9d; 
+        background-color: #f0f8ff;
+    }
+
+    .image-block img {
+        max-width: 100%; /* L'image s'adapte à la taille du bloc */
+        height: auto;
+        display: block; /* Supprime l'espace sous l'image */
+        margin: 0 auto; /* Centre l'image */
+        border-radius: 10px; /* Coins arrondis pour l'image elle-même */
+    }
+
+    /* Quand on glisse un bloc image */
+    .image-block.dragging {
+        opacity: 0.4;
+        border: 2px dashed #e63946 !important;
+    }
 </style>
 </head>
 <body>
 
     <div id="static-toolbar" class="toolbar">
         <button class="tool-button" id="add-text-btn">Ajouter un bloc de texte ✍️</button>
-        </div>
+        <button class="tool-button" id="add-image-btn">Ajouter une image 🖼️</button> </div>
 
     <div id="dynamic-toolbar" class="toolbar hidden">
         <button class="tool-button" id="back-btn">Retour ⬅️</button>
@@ -188,11 +223,12 @@
     const staticToolbar = document.getElementById('static-toolbar');
     const dynamicToolbar = document.getElementById('dynamic-toolbar');
     const addTextBtn = document.getElementById('add-text-btn');
+    const addImageBtn = document.getElementById('add-image-btn'); // NOUVELLE RÉFÉRENCE
     const backBtn = document.getElementById('back-btn');
     const exportBtn = document.getElementById('export-btn');
 
-    let activeBlock = null; // Bloc actuellement en édition
-    let dragElement = null; // Élément en cours de glissement
+    let activeBlock = null; 
+    let dragElement = null; 
 
     // ----------------------------------------------------------------------
     // 1. GESTION DE L'AFFICHAGE DES TOOLBARS ET DES BLOCS
@@ -204,31 +240,35 @@
             activeBlock.contentEditable = 'false';
         }
 
-        // Active le nouveau bloc
         activeBlock = block;
         activeBlock.classList.add('active');
-        activeBlock.contentEditable = 'true';
-        activeBlock.focus();
-        
-        // ⭐ CORRECTION DRAG-AND-DROP : DÉSACTIVER le glisser-déposer en mode édition ⭐
-        activeBlock.setAttribute('draggable', 'false');
+        activeBlock.setAttribute('draggable', 'false'); // Désactive le drag en mode édition
 
-        // Change les barres d'outils
-        staticToolbar.classList.add('hidden');
-        dynamicToolbar.classList.remove('hidden');
+        // Pour les blocs de texte, on rend contenteditable
+        if (activeBlock.classList.contains('text-block')) {
+            activeBlock.contentEditable = 'true';
+            activeBlock.focus();
+            // Cacher la dynamic toolbar pour les images (pas de texte à éditer)
+            // Mais si on veut pouvoir modifier l'alt ou la source, il faudra une autre toolbar
+            dynamicToolbar.classList.remove('hidden'); 
+            staticToolbar.classList.add('hidden');
+        } 
+        // Pour les blocs d'image, on ne rend pas contenteditable mais on met juste la bordure active
+        else if (activeBlock.classList.contains('image-block')) {
+            // Ici, on pourrait afficher une toolbar spécifique pour l'image si besoin
+            staticToolbar.classList.add('hidden');
+            dynamicToolbar.classList.add('hidden'); // On cache la toolbar de texte pour l'image
+            // Plus tard, tu pourrais créer une #image-toolbar
+        }
     }
 
     function exitEditMode() {
         if (activeBlock) {
             activeBlock.contentEditable = 'false';
             activeBlock.classList.remove('active');
-            
-            // ⭐ CORRECTION DRAG-AND-DROP : RÉACTIVER le glisser-déposer en sortie de mode édition ⭐
-            activeBlock.setAttribute('draggable', 'true');
-            
+            activeBlock.setAttribute('draggable', 'true'); // Réactive le drag
             activeBlock = null;
         }
-        // Change les barres d'outils
         dynamicToolbar.classList.add('hidden');
         staticToolbar.classList.remove('hidden');
     }
@@ -242,19 +282,38 @@
         const newBlock = document.createElement('p');
         newBlock.classList.add('text-block');
         newBlock.textContent = 'Nouveau texte génial !'; 
-        
-        // On le crée DRAGGABLE=TRUE par défaut (pour qu'il puisse être glissé immédiatement)
         newBlock.setAttribute('draggable', 'true'); 
-        
         editor.appendChild(newBlock);
-        
         enterEditMode(newBlock);
     });
 
+    // ⭐ NOUVEAU : Ajout d'un nouveau bloc d'image ⭐
+    addImageBtn.addEventListener('click', () => {
+        const imageUrl = prompt("Entre l'URL de l'image (ex: https://picsum.photos/400/300) :");
+        if (imageUrl) {
+            const newBlock = document.createElement('div');
+            newBlock.classList.add('image-block');
+            newBlock.setAttribute('draggable', 'true');
+            
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = "Image ajoutée par l'éditeur"; // Important pour l'accessibilité
+            
+            newBlock.appendChild(img);
+            editor.appendChild(newBlock);
+            enterEditMode(newBlock); // Active le bloc image (bordure et redimensionnement)
+        }
+    });
+
+
     // Écouter les clics dans l'éditeur pour passer en mode édition
     editor.addEventListener('click', (event) => {
-        if (event.target.classList.contains('text-block')) {
+        // Gère les clics sur les blocs de texte OU les blocs d'image
+        if (event.target.classList.contains('text-block') || event.target.classList.contains('image-block')) {
             enterEditMode(event.target);
+        } else if (event.target.tagName === 'IMG' && event.target.closest('.image-block')) {
+            // Si on clique directement sur l'image, on active son parent image-block
+            enterEditMode(event.target.closest('.image-block'));
         }
     });
 
@@ -269,7 +328,6 @@
         const target = event.target;
         const command = target.dataset.command;
         
-        // Gère les commandes des boutons (Gras, Italique, Lien)
         if (target.classList.contains('tool-button') && command) {
             if (command === 'createLink') {
                 const url = prompt("Entre l'URL du lien (ex: https://www.google.com) :");
@@ -277,10 +335,9 @@
                      document.execCommand('createLink', false, url);
                 }
             } else {
-                // Gras, Italique, Souligné
                 document.execCommand(command, false, null);
             }
-            activeBlock.focus(); 
+            if(activeBlock) activeBlock.focus(); 
         }
     });
 
@@ -294,10 +351,8 @@
         const value = target.value;
 
         if (command && value) {
-            // Applique la commande avec la valeur sélectionnée
             document.execCommand(command, false, value);
             
-            // Réinitialise les sélecteurs après l'action (sauf la couleur)
             if (target.tagName === 'SELECT') {
                 target.value = ''; 
             }
@@ -312,16 +367,14 @@
     // ----------------------------------------------------------------------
     // 5. GESTION DU GLISSER-DÉPOSER (DRAG AND DROP)
     // ----------------------------------------------------------------------
-    // REMARQUE : La logique ici n'a pas besoin de changer, car elle vérifie si
-    // l'élément est 'draggable' (ce que nous gérons dans enter/exitEditMode)
-
     editor.addEventListener('dragstart', (event) => {
-        if (event.target.classList.contains('text-block')) {
+        // On rend déplaçable les blocs de texte ET les blocs image
+        if (event.target.classList.contains('text-block') || event.target.classList.contains('image-block')) {
             exitEditMode(); 
             dragElement = event.target;
             dragElement.classList.add('dragging');
             event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/html', event.target.innerHTML);
+            event.dataTransfer.setData('text/html', event.target.outerHTML); // outerHTML pour garder toute la structure
         }
     });
 
@@ -340,17 +393,22 @@
         const target = event.target;
         document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
         
-        if (target.classList.contains('text-block') && target !== dragElement) {
-            const rect = target.getBoundingClientRect();
+        // Cible le parent .text-block ou .image-block
+        let dropTarget = target.closest('.text-block') || target.closest('.image-block');
+
+        if (dropTarget && dropTarget !== dragElement) {
+            const rect = dropTarget.getBoundingClientRect();
             const middleY = rect.top + rect.height / 2;
             
             if (event.clientY < middleY) {
-                target.classList.add('drag-over');
+                dropTarget.classList.add('drag-over');
             } else {
-                if (target.nextElementSibling && target.nextElementSibling.classList.contains('text-block')) {
-                    target.nextElementSibling.classList.add('drag-over');
+                let nextSibling = dropTarget.nextElementSibling;
+                // Si l'élément suivant existe et est aussi un bloc déplaçable
+                if (nextSibling && (nextSibling.classList.contains('text-block') || nextSibling.classList.contains('image-block'))) {
+                    nextSibling.classList.add('drag-over');
                 } else {
-                    target.classList.add('drag-over');
+                    dropTarget.classList.add('drag-over'); // Sinon, on marque après l'actuel
                 }
             }
         }
@@ -360,16 +418,21 @@
         event.preventDefault();
         document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
 
-        if (dragElement && event.target.classList.contains('text-block') && event.target !== dragElement) {
-            const target = event.target;
-            const rect = target.getBoundingClientRect();
+        // Cible le parent .text-block ou .image-block
+        let dropTarget = event.target.closest('.text-block') || event.target.closest('.image-block');
+
+        if (dragElement && dropTarget && dropTarget !== dragElement) {
+            const rect = dropTarget.getBoundingClientRect();
             const middleY = rect.top + rect.height / 2;
 
             if (event.clientY < middleY) {
-                editor.insertBefore(dragElement, target);
+                editor.insertBefore(dragElement, dropTarget);
             } else {
-                editor.insertBefore(dragElement, target.nextSibling);
+                editor.insertBefore(dragElement, dropTarget.nextSibling);
             }
+        } else if (dragElement && event.target === editor) {
+            // Permet de déposer dans l'éditeur s'il est vide ou à la fin
+            editor.appendChild(dragElement);
         }
     });
 
@@ -380,9 +443,9 @@
     exportBtn.addEventListener('click', () => {
         exitEditMode(); 
         
-        // On récupère uniquement le HTML des blocs déplaçables pour l'export
+        // On récupère le HTML de TOUS les blocs déplaçables (texte et image) pour l'export
         const blocksHTML = Array.from(editor.children)
-            .filter(el => el.classList.contains('text-block'))
+            .filter(el => el.classList.contains('text-block') || el.classList.contains('image-block'))
             .map(el => el.outerHTML)
             .join('\n');
             
