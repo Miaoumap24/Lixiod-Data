@@ -16,7 +16,7 @@
     .toolbar {
         padding: 10px;
         display: flex;
-        flex-wrap: wrap; /* Pour s'assurer que ça passe bien sur mobile */
+        flex-wrap: wrap; 
         gap: 10px;
         border-radius: 8px;
         margin-bottom: 10px;
@@ -72,7 +72,7 @@
     /* Le conteneur principal de l'éditeur */
     #editor {
         min-height: 500px;
-        border: 2px dashed #a8dadc; /* Bordure douce pour indiquer la zone de travail */
+        border: 2px dashed #a8dadc;
         padding: 20px;
         background-color: white;
         border-radius: 8px;
@@ -87,20 +87,31 @@
         line-height: 1.6;
         border: 1px solid transparent;
         transition: border 0.2s, background-color 0.2s;
-        cursor: pointer;
-        outline: none; /* Très important pour l'édition */
+        cursor: move; /* Indique qu'il est déplaçable */
+        outline: none;
     }
 
     /* Effet au survol des blocs */
     .text-block:hover {
         border: 1px dashed #457b9d;
-        background-color: #f0f8ff; /* Très légère couleur pour le survol */
+        background-color: #f0f8ff;
     }
 
     /* Style du bloc actif (en mode édition) */
     .text-block.active {
-        border: 2px solid #457b9d; /* Bordure bleue plus forte en édition */
+        border: 2px solid #457b9d; 
         background-color: #ffffff;
+    }
+    
+    /* Glisser-Déposer: Style pour le bloc en cours de glissement (visuel) */
+    .text-block.dragging {
+        opacity: 0.4;
+        border: 2px dashed #e63946 !important;
+    }
+
+    /* Glisser-Déposer: Style pour l'endroit où le bloc va être déposé */
+    .drag-over {
+        border-top: 3px solid #1d3557 !important; 
     }
     </style>
 </head>
@@ -122,82 +133,178 @@
         </div>
 
     <script>
-        // Références aux éléments du DOM
-const editor = document.getElementById('editor');
-const staticToolbar = document.getElementById('static-toolbar');
-const dynamicToolbar = document.getElementById('dynamic-toolbar');
-const addTextBtn = document.getElementById('add-text-btn');
-const backBtn = document.getElementById('back-btn');
-const exportBtn = document.getElementById('export-btn');
+         // Références aux éléments du DOM
+    const editor = document.getElementById('editor');
+    const staticToolbar = document.getElementById('static-toolbar');
+    const dynamicToolbar = document.getElementById('dynamic-toolbar');
+    const addTextBtn = document.getElementById('add-text-btn');
+    const backBtn = document.getElementById('back-btn');
+    const exportBtn = document.getElementById('export-btn');
 
-let activeBlock = null; // Variable pour suivre le bloc actuellement en édition
+    let activeBlock = null; // Variable pour suivre le bloc actuellement en édition
+    let dragElement = null; // Variable pour l'élément qu'on est en train de glisser
 
-// ----------------------------------------------------------------------
-// 1. GESTION DE L'AFFICHAGE DES TOOLBARS ET DES BLOCS
-// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // 1. GESTION DE L'AFFICHAGE DES TOOLBARS ET DES BLOCS
+    // ----------------------------------------------------------------------
 
-function enterEditMode(block) {
-    if (activeBlock) {
-        activeBlock.classList.remove('active');
-        activeBlock.contentEditable = 'false';
+    function enterEditMode(block) {
+        if (activeBlock) {
+            activeBlock.classList.remove('active');
+            activeBlock.contentEditable = 'false';
+        }
+
+        // Active le nouveau bloc
+        activeBlock = block;
+        activeBlock.classList.add('active');
+        activeBlock.contentEditable = 'true';
+        activeBlock.focus();
+
+        // Change les barres d'outils
+        staticToolbar.classList.add('hidden');
+        dynamicToolbar.classList.remove('hidden');
     }
 
-    // Active le nouveau bloc
-    activeBlock = block;
-    activeBlock.classList.add('active');
-    activeBlock.contentEditable = 'true';
-    activeBlock.focus();
-
-    // Change les barres d'outils
-    staticToolbar.classList.add('hidden');
-    dynamicToolbar.classList.remove('hidden');
-}
-
-function exitEditMode() {
-    if (activeBlock) {
-        activeBlock.contentEditable = 'false';
-        activeBlock.classList.remove('active');
-        activeBlock = null;
+    function exitEditMode() {
+        if (activeBlock) {
+            activeBlock.contentEditable = 'false';
+            activeBlock.classList.remove('active');
+            activeBlock = null;
+        }
+        // Change les barres d'outils
+        dynamicToolbar.classList.add('hidden');
+        staticToolbar.classList.remove('hidden');
     }
-    // Change les barres d'outils
-    dynamicToolbar.classList.add('hidden');
-    staticToolbar.classList.remove('hidden');
-}
 
-// ----------------------------------------------------------------------
-// 2. ÉVÉNEMENTS STATIQUES (Ajouter / Exporter)
-// ----------------------------------------------------------------------
+    // ----------------------------------------------------------------------
+    // 2. ÉVÉNEMENTS STATIQUES (Ajouter / Clic Bloc / Retour)
+    // ----------------------------------------------------------------------
 
-// Ajout d'un nouveau bloc de texte
-addTextBtn.addEventListener('click', () => {
-    // Crée un nouveau paragraphe
-    const newBlock = document.createElement('p');
-    newBlock.classList.add('text-block');
-    newBlock.textContent = 'Nouveau texte génial !'; // Texte par défaut
-    
-    editor.appendChild(newBlock);
-    
-    // Entre directement en mode édition pour le nouveau bloc
-    enterEditMode(newBlock);
-});
+    // Ajout d'un nouveau bloc de texte
+    addTextBtn.addEventListener('click', () => {
+        const newBlock = document.createElement('p');
+        newBlock.classList.add('text-block');
+        newBlock.textContent = 'Nouveau texte génial !'; 
+        newBlock.setAttribute('draggable', 'true'); // Rendre le nouveau bloc déplaçable
+        
+        editor.appendChild(newBlock);
+        
+        enterEditMode(newBlock);
+    });
 
-// Écouter les clics dans l'éditeur pour passer en mode édition
-editor.addEventListener('click', (event) => {
-    if (event.target.classList.contains('text-block')) {
-        enterEditMode(event.target);
-    }
-});
+    // Écouter les clics dans l'éditeur pour passer en mode édition
+    editor.addEventListener('click', (event) => {
+        if (event.target.classList.contains('text-block')) {
+            enterEditMode(event.target);
+        }
+    });
 
-// Bouton "Retour" pour sortir du mode édition
-backBtn.addEventListener('click', exitEditMode);
+    // Bouton "Retour" pour sortir du mode édition
+    backBtn.addEventListener('click', exitEditMode);
 
+    // ----------------------------------------------------------------------
+    // 3. ÉVÉNEMENTS DYNAMIQUES (Gras, Italique, etc. via execCommand)
+    // ----------------------------------------------------------------------
 
-// Gestion du bouton EXPORTER (le même que précédemment, adapté)
-exportBtn.addEventListener('click', () => {
-    exitEditMode(); // S'assurer qu'on n'est plus en édition
-    
-    const contentHTML = editor.innerHTML;
-    const exportContent = `<!DOCTYPE html>
+    dynamicToolbar.addEventListener('click', (event) => {
+        const target = event.target;
+        // On vérifie que c'est un bouton d'outil et qu'on n'est pas sur "Retour" ou "Exporter"
+        if (target.classList.contains('tool-button') && target.id !== 'back-btn' && target.id !== 'export-btn') {
+            const command = target.dataset.command;
+            
+            if (command) {
+                // Gestion spéciale pour createLink (demande une URL)
+                if (command === 'createLink') {
+                    const url = prompt("Entre l'URL du lien (ex: https://www.google.com) :");
+                    if (url) {
+                         document.execCommand('createLink', false, url);
+                    }
+                } else {
+                    document.execCommand(command, false, null);
+                }
+                
+                activeBlock.focus(); // Garde le focus pour continuer à taper
+            }
+        }
+    });
+
+    // ----------------------------------------------------------------------
+    // 4. GESTION DU GLISSER-DÉPOSER (DRAG AND DROP)
+    // ----------------------------------------------------------------------
+
+    editor.addEventListener('dragstart', (event) => {
+        if (event.target.classList.contains('text-block')) {
+            exitEditMode(); 
+            
+            dragElement = event.target;
+            dragElement.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/html', event.target.innerHTML);
+        }
+    });
+
+    editor.addEventListener('dragend', (event) => {
+        if (dragElement) {
+            dragElement.classList.remove('dragging');
+            dragElement = null;
+        }
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    });
+
+    editor.addEventListener('dragover', (event) => {
+        event.preventDefault(); 
+        event.dataTransfer.dropEffect = 'move';
+
+        const target = event.target;
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        
+        if (target.classList.contains('text-block') && target !== dragElement) {
+            const rect = target.getBoundingClientRect();
+            const middleY = rect.top + rect.height / 2;
+            
+            if (event.clientY < middleY) {
+                target.classList.add('drag-over');
+            } else {
+                if (target.nextElementSibling && target.nextElementSibling.classList.contains('text-block')) {
+                    target.nextElementSibling.classList.add('drag-over');
+                } else {
+                    target.classList.add('drag-over');
+                }
+            }
+        }
+    });
+
+    editor.addEventListener('drop', (event) => {
+        event.preventDefault();
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+        if (dragElement && event.target.classList.contains('text-block') && event.target !== dragElement) {
+            const target = event.target;
+            const rect = target.getBoundingClientRect();
+            const middleY = rect.top + rect.height / 2;
+
+            if (event.clientY < middleY) {
+                editor.insertBefore(dragElement, target);
+            } else {
+                editor.insertBefore(dragElement, target.nextSibling);
+            }
+        }
+    });
+
+    // ----------------------------------------------------------------------
+    // 5. GESTION DU BOUTON EXPORTER
+    // ----------------------------------------------------------------------
+
+    exportBtn.addEventListener('click', () => {
+        exitEditMode(); // S'assurer qu'on n'est plus en édition
+        
+        // On récupère uniquement le HTML des blocs déplaçables pour l'export
+        const blocksHTML = Array.from(editor.children)
+            .filter(el => el.classList.contains('text-block'))
+            .map(el => el.outerHTML)
+            .join('\n');
+            
+        const exportContent = `<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -205,38 +312,21 @@ exportBtn.addEventListener('click', () => {
     <title>Page Exportée de Mon Éditeur Trop Bien</title>
 </head>
 <body>
-    ${contentHTML}
+    ${blocksHTML}
 </body>
 </html>`;
 
-    const blob = new Blob([exportContent], { type: 'text/html' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'page_editor_timeo.html';
-    
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    alert("Fichier HTML exporté avec succès ! 🎉");
-});
-
-// ----------------------------------------------------------------------
-// 3. ÉVÉNEMENTS DYNAMIQUES (Gras, Italique, etc.)
-// ----------------------------------------------------------------------
-
-dynamicToolbar.addEventListener('click', (event) => {
-    const target = event.target;
-    // On vérifie que c'est un bouton d'outil et qu'on n'est pas sur "Exporter"
-    if (target.classList.contains('tool-button') && target.id !== 'back-btn' && target.id !== 'export-btn') {
-        const command = target.dataset.command;
+        const blob = new Blob([exportContent], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'page_editor_timeo.html';
         
-        if (command) {
-            document.execCommand(command, false, null);
-            activeBlock.focus(); // Garde le focus pour continuer à taper
-        }
-    }
-});
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        alert("Fichier HTML exporté avec succès ! Tu gères ! 🎉");
+    });
     </script>
 </body>
     
