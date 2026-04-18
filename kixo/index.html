@@ -1,20 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Lecteur HLS</title>
+    <meta charset="UTF-8">
+    <title>Fusion HLS en direct</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #121212; color: #fff; }
+        .controls { margin-bottom: 20px; padding: 20px; border: 1px solid #444; }
+    </style>
 </head>
 <body>
+    <div class="controls">
+        <h3>1. Choisir les fichiers</h3>
+        <input type="file" id="f1" label="Première partie">
+        <input type="file" id="f2" label="Deuxième partie">
+        <button onclick="fusionnerEtLire()">Fusionner et Lancer</button>
+    </div>
     <video id="video" controls width="800"></video>
+
     <script>
-        var video = document.getElementById('video');
-        var videoSrc = 'master.m3u8'; 
-        if (Hls.isSupported()) {
-            var hls = new Hls();
-            hls.loadSource(videoSrc);
+        async function fusionnerEtLire() {
+            const f1 = document.getElementById('f1').files[0];
+            const f2 = document.getElementById('f2').files[0];
+            
+            const text1 = await f1.text();
+            const text2 = await f2.text();
+
+            // Nettoyage et fusion
+            const lines1 = text1.split('\n').filter(l => !l.includes('#EXT-X-ENDLIST'));
+            const lines2 = text2.split('\n').filter(l => !l.startsWith('#EXTM3U') && !l.startsWith('#EXT-X-VERSION') && !l.startsWith('#EXT-X-TARGETDURATION') && !l.startsWith('#EXT-X-PLAYLIST-TYPE') && !l.startsWith('#EXT-X-MAP'));
+            
+            const mergedM3U8 = [...lines1, ...lines2, '#EXT-X-ENDLIST'].join('\n');
+
+            // Création d'un Blob virtuel
+            const blob = new Blob([mergedM3U8], { type: 'application/vnd.apple.mpegurl' });
+            const url = URL.createObjectURL(blob);
+
+            // Lecture avec HLS.js
+            const video = document.getElementById('video');
+            const hls = new Hls();
+            hls.loadSource(url);
             hls.attachMedia(video);
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = videoSrc;
         }
     </script>
 </body>
